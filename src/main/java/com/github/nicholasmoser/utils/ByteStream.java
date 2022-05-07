@@ -89,6 +89,20 @@ public class ByteStream extends ByteArrayInputStream {
   }
 
   /**
+   * Read the next big-endian 4-byte float and return it.
+   *
+   * @return The big-endian 4-byte float.
+   * @throws IOException If an I/O error occurs.
+   */
+  public float readFloat() throws IOException {
+    byte[] bytes = new byte[4];
+    if (read(bytes) != 4) {
+      throw new IOException("Failed to read word at offset " + pos);
+    }
+    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getFloat();
+  }
+
+  /**
    * Read the next big-endian 4-byte word and return it.
    *
    * @return The big-endian 4-byte word.
@@ -100,6 +114,48 @@ public class ByteStream extends ByteArrayInputStream {
       throw new IOException("Failed to read word at offset " + pos);
     }
     return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt();
+  }
+
+  /**
+   * Read the next big-endian 4-byte word and return it.
+   *
+   * @return The big-endian 4-byte word.
+   * @throws IOException If an I/O error occurs.
+   */
+  public long readUnsigned() throws IOException {
+    byte[] bytes = new byte[4];
+    if (read(bytes) != 4) {
+      throw new IOException("Failed to read word at offset " + pos);
+    }
+    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getLong();
+  }
+
+  /**
+   * Read the next big-endian 2-byte short and return it.
+   *
+   * @return The big-endian 2-byte short.
+   * @throws IOException If an I/O error occurs.
+   */
+  public int readShort() throws IOException {
+    byte[] bytes = new byte[2];
+    if (read(bytes) != 2) {
+      throw new IOException("Failed to read word at offset " + pos);
+    }
+    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt();
+  }
+
+  /**
+   * Read the next byte and return it.
+   *
+   * @return The byte.
+   * @throws IOException If an I/O error occurs.
+   */
+  public char readByte() throws IOException {
+    byte[] bytes = new byte[1];
+    if (read(bytes) != 2) {
+      throw new IOException("Failed to read word at offset " + pos);
+    }
+    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getChar();
   }
 
   /**

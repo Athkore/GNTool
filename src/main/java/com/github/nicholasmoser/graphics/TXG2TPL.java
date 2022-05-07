@@ -4,6 +4,10 @@ import com.github.nicholasmoser.utils.ProcessUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.DataFormatException;
 
 /**
  * Wrapper class for Struggleton's TXG2TPL.exe. https://github.com/Struggleton/TXG2TPL An (un)packer
@@ -26,14 +30,16 @@ public class TXG2TPL {
       throw new IOException(outputDirectory + " is not a valid directory.");
     }
     try {
-      Process process = new ProcessBuilder("TXG2TPL.exe", "-u", inputFile.toString(),
+      TXG.unpack(inputFile.toString(),outputDirectory.toString());
+      /*Process process = new ProcessBuilder("TXG2TPL.exe", "-u", inputFile.toString(),
           outputDirectory.toString()).start();
       String output = ProcessUtils.readOutputFromProcess(process);
       process.waitFor();
-      return output;
-    } catch (InterruptedException e) {
+      return output;*/
+    } catch (Exception e){ //(InterruptedException e) {
       throw new IOException(e);
     }
+    return "";
   }
 
   /**
@@ -49,13 +55,22 @@ public class TXG2TPL {
       throw new IOException(inputDirectory + " is not a valid directory.");
     }
     try {
-      Process process = new ProcessBuilder("TXG2TPL.exe", "-p", inputDirectory.toString(),
+      Stream pathStream = Files.list(inputDirectory);
+      List pathList = (List) pathStream.collect(Collectors.toList());
+      int sz = pathList.size();
+      String[] files = new String[sz];
+      for (int i = 0; i < sz; i++){
+        files[i] = pathList.get(i).toString();
+      }
+      TXG.pack(outputFile.toString(),files);
+      /*Process process = new ProcessBuilder("TXG2TPL.exe", "-p", inputDirectory.toString(),
           outputFile.toString()).start();
       String output = ProcessUtils.readOutputFromProcess(process);
       process.waitFor();
-      return output;
-    } catch (InterruptedException e) {
+      return output;*/
+    } catch (DataFormatException e) {
       throw new IOException(e);
     }
+    return "";
   }
 }

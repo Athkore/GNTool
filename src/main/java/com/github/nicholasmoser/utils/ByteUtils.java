@@ -35,6 +35,20 @@ public class ByteUtils {
   }
 
   /**
+   * Converts an int16 (as an int) to a 2-byte big-endian byte array. Values over 65,535 will wrap
+   * back to zero.
+   *
+   * @param value the int16 (as an int).
+   * @return The output bytes.
+   */
+  public static byte[] fromInt16(int value) {
+    return new byte[]{
+            (byte) (value >> 8),
+            (byte) (value),
+    };
+  }
+
+  /**
    * Converts a uint24 (as an int) to a 3-byte big-endian byte array. Values over 16,777,215 will
    * wrap back to zero.
    *
@@ -308,6 +322,17 @@ public class ByteUtils {
   }
 
   /**
+   * Writes an int as big-endian int16 to a RandomAccessFile.
+   *
+   * @param raf The RandomAccessFile to write to.
+   * @param value The value that is to be written to the RandomAccessFile.
+   */
+  public static void writeInt16(RandomAccessFile raf, int value) throws IOException {
+    byte[] bytes = fromInt16(value);
+    raf.write(bytes);
+  }
+
+  /**
    * Reads a big-endian int32 (as an int) from a RandomAccessFile.
    *
    * @param raf The RandomAccessFile to read from.
@@ -320,6 +345,28 @@ public class ByteUtils {
       throw new IOException("Failed to read 4 bytes from file");
     }
     return toInt32(bytes);
+  }
+
+  /**
+   * Writes an int as big-endian int32 to a RandomAccessFile.
+   *
+   * @param raf The RandomAccessFile to write to.
+   * @param value The value that is to be written to the RandomAccessFile.
+   */
+  public static void writeInt32(RandomAccessFile raf, int value) throws IOException {
+    byte[] bytes = fromInt32(value);
+    raf.write(bytes);
+  }
+
+  /**
+   * Writes a long as big-endian uint32 to a RandomAccessFile.
+   *
+   * @param raf The RandomAccessFile to write to.
+   * @param value The value that is to be written to the RandomAccessFile.
+   */
+  public static void writeUint32(RandomAccessFile raf, long value) throws IOException {
+    byte[] bytes = fromUint32(value);
+    raf.write(bytes);
   }
 
   /**
