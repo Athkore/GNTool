@@ -1,15 +1,11 @@
 package com.github.nicholasmoser.graphics;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.stream.Stream;
 import java.util.zip.DataFormatException;
 
 import com.github.nicholasmoser.utils.ByteStream;
@@ -50,7 +46,7 @@ public class TXG {
         for (int i = 0; i < FileCount; i++){
             reader.seek((int)Offsets[i]);
             Path fileName = Paths.get(outputDir,i+".tpl");
-            System.out.println(String.format("File Name: {0}", fileName));
+            System.out.println(String.format("File Name: %s", fileName));
             TXGHeader header = new TXGHeader(reader);
             RandomAccessFile raf = new RandomAccessFile(fileName.toString(),"rw");
             try {
@@ -153,11 +149,17 @@ public class TXG {
                         writer.write(ByteUtils.fromInt32(0));
                         ByteUtils.byteAlign(writer, 0x20);
                         long tmp = writer.getFilePointer();
-                        System.err.println(String.format("Place to jump back to: %i",tmp));
                         writer.seek(PTableOffsets[i] + 0x08);
                         writer.write(ByteUtils.fromUint32(tmp));
                         writer.seek(tmp);
+                        System.err.print("[");
+                        for (byte b : header.PaletteData[i]) {
+                            System.err.print(String.format("%02x,",b));
+                        }
+                        System.err.println("]");
+                        System.err.println(header.PaletteData[i].toString());
                         writer.write(header.PaletteData[i]);
+                        System.err.println(writer.getFilePointer());
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                         System.out.println(String.format("Palette for image number: %d",i));
@@ -168,13 +170,13 @@ public class TXG {
             System.err.println(String.format("ImageCount: %d",header.ImageCount.intValue()));
 
             for (int i = 0; i < header.ImageCount.intValue(); i++){
+                System.err.println(writer.getFilePointer());
                 ITableOffsets[i] = (int)writer.getFilePointer();
                 System.err.println(String.format("ITableOffset %d: %d",i,ITableOffsets[i]));
                 writer.write(ByteUtils.fromUint16(header.Height.shortValue()));
                 writer.write(ByteUtils.fromUint16(header.Width.shortValue()));
                 writer.write(ByteUtils.fromInt32(header.ImageFormat.intValue()));
                 long PastOffset = writer.getFilePointer();
-                System.err.println(String.format("PastOffset: %d",PastOffset));
                 writer.write(ByteUtils.fromInt32(0));
                 writer.write(ByteUtils.fromInt32(0));
                 writer.write(ByteUtils.fromInt32(0));
@@ -188,6 +190,7 @@ public class TXG {
                 System.err.println(String.format("PastOffset: %d\nPlace to jump back to: %d",PastOffset,tmp));
                 writer.seek(PastOffset);
                 writer.write(ByteUtils.fromUint32(tmp));
+                writer.seek(tmp);
                 writer.write(header.ImageData[i]);
             }
 
@@ -268,30 +271,29 @@ public class TXG {
         }
 
         public TXGHeader(ByteStream reader) throws IOException, DataFormatException {
-            ImageCount = UnsignedInteger.fromIntBits(reader.readWord());  //2
-            ImageFormat = UnsignedInteger.fromIntBits(reader.readWord()); //E
-            PaletteFormat = UnsignedInteger.fromIntBits(reader.readWord());//0
-            Width = UnsignedInteger.fromIntBits(reader.readWord());         //40
-            Height = UnsignedInteger.fromIntBits(reader.readWord());        //40
-            SingleImage = UnsignedInteger.fromIntBits(reader.readWord());   //0
+            ImageCount = UnsignedInteger.fromIntBits(reader.readWord());  //1
+            ImageFormat = UnsignedInteger.fromIntBits(reader.readWord()); //9
+            PaletteFormat = UnsignedInteger.fromIntBits(reader.readWord());//2
+            Width = UnsignedInteger.fromIntBits(reader.readWord());         //64
+            Height = UnsignedInteger.fromIntBits(reader.readWord());        //26
+            SingleImage = UnsignedInteger.fromIntBits(reader.readWord());   //1
             _Format = ImageDataFormat.GetFormat(ImageFormat.intValue());
 
             ImageData = new byte[ImageCount.intValue()][];
             PaletteData = new byte[ImageCount.intValue()][];
-
+            int ImageSize = _Format.CalculateDataSize(Width.longValue(),Height.longValue());
             for (int i = 0; i < ImageCount.intValue(); i++){
-                int ImageSize = _Format.CalculateDataSize(Width.longValue(),Height.longValue());
-                int pos = reader.offset();
-                UnsignedInteger imagePos = UnsignedInteger.fromIntBits(reader.readWord());  //40
-                System.err.println(String.format("ImageSize: %d\nimagePos: %d",ImageSize,imagePos.longValue()));
-                reader.seek(imagePos.intValue());
+                int imagePos = reader.readWord();  //40
+                int returnPos = reader.offset();
+                reader.seek(imagePos);
                 ImageData[i] = reader.readBytes(ImageSize);
-                reader.seek(pos);
+                reader.seek(returnPos);
             }
 
             if (_Format.hasPalette) {
                 for (int i = 0; i < ImageCount.intValue(); i++) {
                     int paletteLength = reader.readWord();
+                    System.err.println(String.format("palleteLength: %02x",paletteLength));
                     if (paletteLength != -1) {
                         int pos = reader.offset();
                         reader.seek(paletteLength);

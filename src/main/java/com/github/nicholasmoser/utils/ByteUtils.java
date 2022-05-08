@@ -563,4 +563,17 @@ public class ByteUtils {
       raf.skipBytes((int) (alignment - (offset % alignment)));
     }
   }
+  /**
+   * Align a RandomAccessFile to a provided alignment byte-boundary.
+   *
+   * @param raf The RandomAccessFile to align.
+   * @param alignment The number of bytes to align on.
+   * @throws IOException If an I/O error occurs.
+   */
+  public static void alignPosition(RandomAccessFile raf, int alignment, byte paddingValue) throws IOException {
+    long offset = raf.getFilePointer();
+    int align = (int) ((offset + (alignment - 1)) & ~(alignment - 1));
+    byte[] array = new byte[align];
+    Arrays.fill(array,paddingValue);
+  }
 }
