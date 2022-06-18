@@ -301,10 +301,9 @@ public class TXG {
                     int paletteLength = reader.readWord();
                     System.err.println(String.format("palleteLength: %02x",paletteLength));
                     if (paletteLength != -1) {
-                        int pos = reader.offset();
-                        reader.seek(paletteLength);
+                        //int pos = reader.offset();
                         PaletteData[i] = reader.readBytes(0x200);
-                        reader.seek(pos);
+                        //reader.seek(pos);
                     } else {
                         int previousPaletteLength = PaletteData[i-1].length;
                         PaletteData[i] = Arrays.copyOf(PaletteData[i-1],previousPaletteLength);
