@@ -33,6 +33,11 @@ public class TXG {
             inputFile.read(input);
             new TXGHeader(outputFile, new TPL(new ByteStream(input)));
         }
+
+        outputFile.seek(0x04);
+        for (int i = 0; i < files.length; i++) {
+            ByteUtils.writeUint32(outputFile, Offsets[i]);
+        }
     }
 
     public static void unpack(String inputFile, String outputDir) throws IOException, DataFormatException {
@@ -79,10 +84,10 @@ public class TXG {
         public long MinFilter;
         public long MagFilter;
         public float LODBias;
-        public char EnableEdgeLOD;
-        public char MinLOD;
-        public char MaxLOD;
-        private char _Unpacked;
+        public byte EnableEdgeLOD;
+        public byte MinLOD;
+        public byte MaxLOD;
+        private byte _Unpacked;
         public ImageDataFormat _Format;
 
         public byte[][] ImageData;
@@ -106,9 +111,11 @@ public class TXG {
             PaletteData = new byte[ImageCount][];
             for (int i = 0; i < ImageCount; i++){
                 stream.seek(ITableOffsets[i]);
+                System.err.println(String.format("Current image: %d\nTotal nr of images: %d\nImageOffset: %d\nCurrent Offset: %d\nTotal size: %d",i,ImageCount,ITableOffsets[i],stream.offset(),stream.length()));
                 Height = stream.readShort();
                 Width = stream.readShort();
                 ImageFormat = stream.readWord();
+                System.err.println(String.format("Image Format: 0x%02X",ImageFormat));
                 ImageOffset = stream.readWord();
                 WrapS = stream.readWord();
                 WrapT = stream.readWord();
@@ -247,27 +254,26 @@ public class TXG {
                 raf.write(tpl.ImageData[i]);
             }
 
-            try{
-                for (int i = 0; i < tpl.PaletteData.length; i++){
-                    PaletteOffsets[i] = raf.getFilePointer();
-                    raf.write(tpl.PaletteData[i]);
+            try {
+                for (int i = 0; i < tpl.PaletteData.length; i++) {
+                        PaletteOffsets[i] = raf.getFilePointer();
+                        raf.write(tpl.PaletteData[i]);
                 }
-            } catch (IllegalArgumentException iae) {
-                System.out.println(iae.getMessage());
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
 
             long CurrentOffset = raf.getFilePointer();
-            ByteUtils.writeInt32(raf,(int)PastOffset);
+            raf.seek(PastOffset);
 
             for (int i = 0; i < tpl.ImageData.length; i++){
                 ByteUtils.writeUint32(raf,ImageOffsets[i]);
             }
-
-            for (int i = 0; i < tpl.PaletteData.length; i++){
-                ByteUtils.writeUint32(raf,PaletteOffsets[i]);
+            for (int i = 0; i < tpl.PaletteData.length; i++) {
+                ByteUtils.writeUint32(raf, PaletteOffsets[i]);
             }
+
             raf.seek(CurrentOffset);
-            raf.close();
         }
 
         public TXGHeader(ByteStream reader) throws IOException, DataFormatException {

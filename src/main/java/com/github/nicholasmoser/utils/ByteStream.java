@@ -127,7 +127,7 @@ public class ByteStream extends ByteArrayInputStream {
     if (read(bytes) != 4) {
       throw new IOException("Failed to read word at offset " + pos);
     }
-    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getLong();
+    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt();
   }
 
   /**
@@ -138,10 +138,10 @@ public class ByteStream extends ByteArrayInputStream {
    */
   public int readShort() throws IOException {
     byte[] bytes = new byte[2];
-    if (read(bytes) != 2) {
+    if (read(bytes,0,bytes.length) != 2) {
       throw new IOException("Failed to read word at offset " + pos);
     }
-    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt();
+    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getShort();
   }
 
   /**
@@ -150,12 +150,12 @@ public class ByteStream extends ByteArrayInputStream {
    * @return The byte.
    * @throws IOException If an I/O error occurs.
    */
-  public char readByte() throws IOException {
+  public byte readByte() throws IOException {
     byte[] bytes = new byte[1];
-    if (read(bytes) != 2) {
+    if (read(bytes) != 1) {
       throw new IOException("Failed to read word at offset " + pos);
     }
-    return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getChar();
+    return bytes[0];
   }
 
   /**

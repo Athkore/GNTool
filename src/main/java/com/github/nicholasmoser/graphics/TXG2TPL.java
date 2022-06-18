@@ -37,6 +37,7 @@ public class TXG2TPL {
       process.waitFor();
       return output;*/
     } catch (Exception e){ //(InterruptedException e) {
+      e.printStackTrace();
       throw new IOException(e);
     }
     return "";
