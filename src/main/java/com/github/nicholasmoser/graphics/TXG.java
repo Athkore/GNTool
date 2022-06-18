@@ -51,7 +51,7 @@ public class TXG {
         for (int i = 0; i < FileCount; i++){
             reader.seek((int)Offsets[i]);
             Path fileName = Paths.get(outputDir,i+".tpl");
-            System.out.println(String.format("File Name: %s", fileName));
+            //System.out.println(String.format("File Name: %s", fileName));
             TXGHeader header = new TXGHeader(reader);
             RandomAccessFile raf = new RandomAccessFile(fileName.toString(),"rw");
             try {
@@ -111,11 +111,9 @@ public class TXG {
             PaletteData = new byte[ImageCount][];
             for (int i = 0; i < ImageCount; i++){
                 stream.seek(ITableOffsets[i]);
-                System.err.println(String.format("Current image: %d\nTotal nr of images: %d\nImageOffset: %d\nCurrent Offset: %d\nTotal size: %d",i,ImageCount,ITableOffsets[i],stream.offset(),stream.length()));
                 Height = stream.readShort();
                 Width = stream.readShort();
                 ImageFormat = stream.readWord();
-                System.err.println(String.format("Image Format: 0x%02X",ImageFormat));
                 ImageOffset = stream.readWord();
                 WrapS = stream.readWord();
                 WrapT = stream.readWord();
@@ -159,27 +157,14 @@ public class TXG {
                         writer.seek(PTableOffsets[i] + 0x08);
                         writer.write(ByteUtils.fromUint32(tmp));
                         writer.seek(tmp);
-                        System.err.print("[");
-                        for (byte b : header.PaletteData[i]) {
-                            System.err.print(String.format("%02x,",b));
-                        }
-                        System.err.println("]");
-                        System.err.println(header.PaletteData[i].toString());
                         writer.write(header.PaletteData[i]);
-                        System.err.println(writer.getFilePointer());
                     } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                        System.out.println(String.format("Palette for image number: %d",i));
                     }
                 }
             }
 
-            System.err.println(String.format("ImageCount: %d",header.ImageCount.intValue()));
-
             for (int i = 0; i < header.ImageCount.intValue(); i++){
-                System.err.println(writer.getFilePointer());
                 ITableOffsets[i] = (int)writer.getFilePointer();
-                System.err.println(String.format("ITableOffset %d: %d",i,ITableOffsets[i]));
                 writer.write(ByteUtils.fromUint16(header.Height.shortValue()));
                 writer.write(ByteUtils.fromUint16(header.Width.shortValue()));
                 writer.write(ByteUtils.fromInt32(header.ImageFormat.intValue()));
@@ -192,9 +177,7 @@ public class TXG {
                 writer.write(ByteUtils.fromInt32(0));
                 writer.write(ByteUtils.fromInt32(0));
                 ByteUtils.byteAlign(writer,0x20);
-                //writer.seek(writer.getFilePointer()-4);
                 long tmp = writer.getFilePointer();
-                System.err.println(String.format("PastOffset: %d\nPlace to jump back to: %d",PastOffset,tmp));
                 writer.seek(PastOffset);
                 writer.write(ByteUtils.fromUint32(tmp));
                 writer.seek(tmp);
@@ -203,7 +186,6 @@ public class TXG {
 
             writer.seek(0x0C);
             for (int i = 0; i < header.ImageCount.intValue(); i++){
-                System.err.println(String.format("ITableOffset %d: %02x\nPTableOffset %d: %02x",i,ITableOffsets[i],i,PTableOffsets[i]));
                 writer.write(ByteUtils.fromInt32(ITableOffsets[i]));
                 writer.write(ByteUtils.fromInt32(PTableOffsets[i]));
             }
@@ -260,7 +242,7 @@ public class TXG {
                         raf.write(tpl.PaletteData[i]);
                 }
             } catch (Exception e) {
-                System.out.println(e.getMessage());
+                //System.out.println(e.getMessage());
             }
 
             long CurrentOffset = raf.getFilePointer();
@@ -277,19 +259,19 @@ public class TXG {
         }
 
         public TXGHeader(ByteStream reader) throws IOException, DataFormatException {
-            ImageCount = UnsignedInteger.fromIntBits(reader.readWord());  //1
-            ImageFormat = UnsignedInteger.fromIntBits(reader.readWord()); //9
-            PaletteFormat = UnsignedInteger.fromIntBits(reader.readWord());//2
-            Width = UnsignedInteger.fromIntBits(reader.readWord());         //64
-            Height = UnsignedInteger.fromIntBits(reader.readWord());        //26
-            SingleImage = UnsignedInteger.fromIntBits(reader.readWord());   //1
+            ImageCount = UnsignedInteger.fromIntBits(reader.readWord());
+            ImageFormat = UnsignedInteger.fromIntBits(reader.readWord());
+            PaletteFormat = UnsignedInteger.fromIntBits(reader.readWord());
+            Width = UnsignedInteger.fromIntBits(reader.readWord());
+            Height = UnsignedInteger.fromIntBits(reader.readWord());
+            SingleImage = UnsignedInteger.fromIntBits(reader.readWord());
             _Format = ImageDataFormat.GetFormat(ImageFormat.intValue());
 
             ImageData = new byte[ImageCount.intValue()][];
             PaletteData = new byte[ImageCount.intValue()][];
             int ImageSize = _Format.CalculateDataSize(Width.longValue(),Height.longValue());
             for (int i = 0; i < ImageCount.intValue(); i++){
-                int imagePos = reader.readWord();  //40
+                int imagePos = reader.readWord();
                 int returnPos = reader.offset();
                 reader.seek(imagePos);
                 ImageData[i] = reader.readBytes(ImageSize);
@@ -299,11 +281,8 @@ public class TXG {
             if (_Format.hasPalette) {
                 for (int i = 0; i < ImageCount.intValue(); i++) {
                     int paletteLength = reader.readWord();
-                    System.err.println(String.format("palleteLength: %02x",paletteLength));
                     if (paletteLength != -1) {
-                        //int pos = reader.offset();
                         PaletteData[i] = reader.readBytes(0x200);
-                        //reader.seek(pos);
                     } else {
                         int previousPaletteLength = PaletteData[i-1].length;
                         PaletteData[i] = Arrays.copyOf(PaletteData[i-1],previousPaletteLength);
